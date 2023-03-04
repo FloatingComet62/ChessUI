@@ -26,6 +26,20 @@ export enum Player {
 }
 export const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'].reverse();
 export const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const fenMap = {
+  "r": Piece.B_ROOK,
+  "n": Piece.B_KNIGHT,
+  "b": Piece.B_BISHOP,
+  "q": Piece.B_QUEEN,
+  "k": Piece.B_KING,
+  "p": Piece.B_PAWN,
+  "R": Piece.W_ROOK,
+  "N": Piece.W_KNIGHT,
+  "B": Piece.W_BISHOP,
+  "Q": Piece.W_QUEEN,
+  "K": Piece.W_KING,
+  "P": Piece.W_PAWN
+}
 
 export function fillMissing(obj: Object): Object {
   for (const rank of ranks)
@@ -36,19 +50,7 @@ export function fillMissing(obj: Object): Object {
 }
 
 function fenCharToPiece(char: string): Piece {
-  if (char == "r") return Piece.B_ROOK
-  if (char == "n") return Piece.B_KNIGHT
-  if (char == "b") return Piece.B_BISHOP
-  if (char == "q") return Piece.B_QUEEN
-  if (char == "k") return Piece.B_KING
-  if (char == "p") return Piece.B_PAWN
-
-  if (char == "R") return Piece.W_ROOK
-  if (char == "N") return Piece.W_KNIGHT
-  if (char == "B") return Piece.W_BISHOP
-  if (char == "Q") return Piece.W_QUEEN
-  if (char == "K") return Piece.W_KING
-  if (char == "P") return Piece.W_PAWN
+  if (fenMap[char]) return fenMap[char]
   return Piece.None
 }
 
@@ -95,4 +97,43 @@ export function FENtoBoard(fen: string): Object {
   }
 
   return board;
+}
+
+export function getKeyByValue(object: Object, value: any) {
+  return Object.keys(object).find(key => object[key] === value);
+}
+
+export function boardToFen(board: Object): string {
+  let fen = "";
+
+  let currentRank = '8';
+  let currentSkip = 0;
+  const a_board = Object.entries(board);
+  let i = 0;
+  for (i = 0; i < a_board.length; i++) {
+    const [key, value] = a_board[i];
+    const rank = key[1];
+    if (currentRank != rank) {
+      if (currentSkip) {
+        fen += currentSkip.toString();
+        currentSkip = 0;
+      }
+      currentRank = rank;
+      fen += "/";
+    }
+    const p = getKeyByValue(fenMap, value);
+    if (p) {
+      if (currentSkip) {
+        fen += currentSkip.toString();
+        currentSkip = 0;
+      }
+      fen += p;
+    } else {
+      currentSkip += 1;
+    }
+  }
+
+  if (currentSkip) fen += currentSkip.toString();
+
+  return fen;
 }

@@ -6,7 +6,9 @@
   export let color: Color;
   export let piece: Piece;
   export let moveable: boolean;
-  export let setHP: (p: Piece, file: number, rank: number) => void;
+  export let setHP: (event: MouseEvent & {
+    currentTarget: EventTarget & HTMLDivElement;
+}, p: Piece, file: number, rank: number) => void;
   export let getHP: () => Piece;
   export let updateBoard: (move: string, piece: Piece, unChose: () => void) => void;
   export let moved: () => void
@@ -25,21 +27,21 @@
   class={`cell ${highlighted ? 'highlight' : ''} ${choosen ? 'chosen': ''} ${color}`}
   unselectable="on"
   id={file+rank}
-  on:click={()=> {
+  on:click={(e)=> {
     if (!choosen && !moveable && getHP() != Piece.None) return;
     if (moveable) moved();
 
     if (piece == Piece.None) {
       // placing a piece on blank
       piece = getHP();
-      setHP(Piece.None, fileToInt(file), parseInt(rank));
+      setHP(e, Piece.None, fileToInt(file), parseInt(rank));
     } else {
       if (getHP() != Piece.None) {
         // capture
         piece = getHP();
-        setHP(Piece.None, fileToInt(file), parseInt(rank));
+        setHP(e, Piece.None, fileToInt(file), parseInt(rank));
       } else {
-        setHP(piece, fileToInt(file), parseInt(rank));
+        setHP(e, piece, fileToInt(file), parseInt(rank));
         piece = Piece.None;
       }
     }

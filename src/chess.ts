@@ -1,4 +1,4 @@
-import { Piece, files, fileToInt } from "./util";
+import { Piece, files, fileToInt, getKeyByValue } from "./util";
 
 export function king(piece: Piece, castling: string[], board: Object, file: number, rank: number): string[] {
   const valid_moves: string[] = [];
@@ -208,10 +208,6 @@ export function makeMove(board: Object, piece: Piece, from: string, to: string) 
 
   board[from] = Piece.None;
   board[to] = piece;
-}
-
-function getKeyByValue(object: Object, value: any) {
-  return Object.keys(object).find(key => object[key] === value);
 }
 
 export function gen_moves(board: Object, castling: string[], piece: Piece, file: number, rank: number): string[] {

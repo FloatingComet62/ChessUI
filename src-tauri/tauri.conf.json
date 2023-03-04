@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "chess-ui",
-    "version": "0.0.0"
+    "version": "1.1.0"
   },
   "tauri": {
     "allowlist": {
@@ -27,7 +27,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "dev.is-a.comet",
       "targets": "all"
     },
     "security": {

@@ -1,14 +1,17 @@
 <script lang="ts">
   import Cell from "./lib/Cell.svelte";
-  import { Color, ranks, files, Piece, FENtoBoard, Player } from "./util";
+  import { Color, ranks, files, Piece, FENtoBoard, Player, boardToFen } from "./util";
   import { gen_moves } from "./chess";
 
+  const history = [];
   const initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR KQkq w".split(' ')
 
-  const board = FENtoBoard(initialPosition[0]);
+  let board = FENtoBoard(initialPosition[0]);
+  history.push(initialPosition[0]);
   let castling = initialPosition[1].split('');
   let moving_piece = Piece.None;
   let from = "";
+  let flip = false;
   let to_move: Player = initialPosition[2] == 'w' ? Player.WHITE : Player.BLACK;
 
   let hoveringPiece = Piece.None;
@@ -68,8 +71,14 @@
       }
     }
   }
-  function setHoveringPiece(p: Piece, file: number, rank: number) {
+  function setHoveringPiece(e: MouseEvent & {
+    currentTarget: EventTarget & HTMLDivElement;
+}, p: Piece, file: number, rank: number) {
     hoveringPiece = p;
+    hoveringDiv.style.cssText = 
+      `display: block;
+      left: ${e.pageX - 25}px;
+      top: ${e.pageY - 25}px`
     if (to_move == p[0]) {
       moving_piece = p;
       from = files[file]+rank.toString();
@@ -85,54 +94,107 @@
       }
       moves = [];
       un_choose();
-    } 
+    }
   }
   function getHoveringPiece(): Piece { return hoveringPiece }
   function updateBoard(move: string, piece: Piece, unChose: () => void) {
     board[move] = piece;
     un_choose = unChose;
+
+    // update history
+    const new_fen = boardToFen(board);
+    if (hoveringPiece == Piece.None && history[history.length-1] != new_fen)
+      history.push(new_fen);
+    console.log(history)
   }
   function moved() {
-    if (to_move == Player.WHITE) to_move = Player.BLACK
-    else to_move = Player.WHITE
+    if (to_move == Player.WHITE) to_move = Player.BLACK;
+    else to_move = Player.WHITE;
+  }
+
+  function undo() {
+    history.pop();
+    const new_board = history[history.length-1]
+    if (new_board) {
+      board = FENtoBoard(history[history.length-1]);
+      moved();
+    }
+    else history.push(boardToFen(board));
+  }
+
+  function do_flip() {
+    flip = !flip
   }
 
   document.onmousemove = (event) => {
-    if (hoveringDiv) {
+    if (hoveringDiv)
       hoveringDiv.style.cssText = 
-      `left: ${event.pageX - 25}px;
+      `display: block;
+      left: ${event.pageX - 25}px;
       top: ${event.pageY - 25}px`
-    }
   }
-  window.oncontextmenu = () => {
-    return false;
-  }
+  window.oncontextmenu = () => false;
 </script>
 
-<main id="container">
-  {#each ranks as rank, i}
-    {#each files as file, j}
-      <Cell
-        color={(i+j) % 2 == 0 ? Color.LIGHT : Color.DARK}
-        file={file}
-        rank={rank}
-        moveable={moves.includes(file+rank)}
-        piece={board[file+rank]}
-        setHP={setHoveringPiece}
-        getHP={getHoveringPiece}
-        updateBoard={updateBoard}
-        moved={moved}
-      />
-    {/each}
-  {/each}
-</main>
-{#if hoveringPiece != Piece.None}
-  <div class="hovering" bind:this={hoveringDiv}>
-    <img src={`${hoveringPiece}.png`} alt={`${hoveringPiece}`} />
+<main>
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<section class="buttons">
+  <div class="button" on:click={undo}>
+    <img src="/undo.svg" alt="undo" />
   </div>
-{/if}
+  <div class="button" on:click={do_flip}>
+    <img src="/flip.svg" alt="Flip" />
+  </div>
+</section>
+<section id="container">
+  {#if flip}
+    {#each ranks.slice().reverse() as rank, i}
+      {#each files.slice().reverse() as file, j}
+        <Cell
+          color={(i+j) % 2 == 0 ? Color.LIGHT : Color.DARK}
+          file={file}
+          rank={rank}
+          moveable={moves.includes(file+rank)}
+          piece={board[file+rank]}
+          setHP={setHoveringPiece}
+          getHP={getHoveringPiece}
+          updateBoard={updateBoard}
+          moved={moved}
+        />
+      {/each}
+    {/each}
+  {:else}
+    {#each ranks as rank, i}
+      {#each files as file, j}
+        <Cell
+          color={(i+j) % 2 == 0 ? Color.LIGHT : Color.DARK}
+          file={file}
+          rank={rank}
+          moveable={moves.includes(file+rank)}
+          piece={board[file+rank]}
+          setHP={setHoveringPiece}
+          getHP={getHoveringPiece}
+          updateBoard={updateBoard}
+          moved={moved}
+        />
+      {/each}
+    {/each}
+  {/if}
+</section>
+<div class="hovering" bind:this={hoveringDiv}>
+  {#if hoveringPiece != Piece.None}
+    <img src={`${hoveringPiece}.png`} alt={`${hoveringPiece}`} />
+  {/if}
+</div>
+</main>
 
 <style>
+main {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 100%;
+}
 #container {
   display: grid;
   /* 8 x 8 grid */
@@ -148,6 +210,7 @@
   grid-template-rows: 70px 70px 70px 70px 70px 70px 70px 70px;
 }
 .hovering {
+  display: none;
   position: absolute;
   left: 25px;
   top: 25px;
@@ -157,5 +220,25 @@
 .hovering > img {
   width: 50px;
   height: 50px;
+}
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+.button {
+  cursor: pointer;
+  background-color: #7fa650;
+  width: 50px;
+  height: 50px;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  align-self: center;
+  display: grid;
+  place-items: center;
+}
+.undo > img {
+  width: 25px;
+  height: 25px;
 }
 </style>
