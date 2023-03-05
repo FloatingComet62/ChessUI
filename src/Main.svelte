@@ -185,7 +185,6 @@
       history[history.length - 1].split(" ")[0] != new_fen
     )
       history.push(new_fen + " " + castling.join(""));
-    console.log(history);
   }
   function moved() {
     if (to_move == Player.WHITE) to_move = Player.BLACK;

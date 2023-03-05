@@ -225,6 +225,11 @@ export function gen_moves(board: Object, castling: string[], piece: Piece, file:
     // generate new moves
     const new_moves = [];
     const enemies = {};
+
+    if (cloned_board['a8'][0] == (piece[0] == 'w' ? 'b' : 'w'))
+      enemies['a8'] = cloned_board['a8']
+    // due to the "previousValue" & "currentValue", this function below doesn't check
+    // position a8, so i forcefully check it right above
     Object.keys(cloned_board).reduce((_, key) => {
       if (cloned_board[key][0] == (piece[0] == 'w' ? 'b' : 'w'))
         enemies[key] = cloned_board[key]
@@ -237,6 +242,8 @@ export function gen_moves(board: Object, castling: string[], piece: Piece, file:
       for (const e_move of e_moves)
         new_moves.push(e_move);
     }
+
+    console.log(board, enemies, piece)
 
     // if the move leads to the capture of our king, don't include it
     if (!new_moves.includes(our_king)) {

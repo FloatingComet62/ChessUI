@@ -6,7 +6,6 @@
 
   document.addEventListener("keypress", (e) => {
     if (e.key == "Enter") start = true;
-    console.log(initialPosition);
   });
 </script>
 
