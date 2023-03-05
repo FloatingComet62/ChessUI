@@ -117,7 +117,6 @@
             file,
             rank
           );
-          console.log(friends);
           for (const e_move of e_moves) our_new_moves.push(e_move);
         }
 
@@ -147,7 +146,6 @@
               file,
               rank
             );
-            console.log(enemies);
             for (const e_move of e_moves) new_moves.push(e_move);
           }
 
@@ -195,8 +193,9 @@
 
   function undo() {
     history.pop();
-    const [new_board, new_castling] = history[history.length - 1].split(" ");
-    if (new_board) {
+    const data = history[history.length - 1];
+    if (data) {
+      const [new_board, new_castling] = data.split(" ");
       board = FENtoBoard(new_board);
       castling = new_castling.split("");
       moved();

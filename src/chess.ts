@@ -234,7 +234,6 @@ export function gen_moves(board: Object, castling: string[], piece: Piece, file:
       const file = fileToInt(key[0]);
       const rank = parseInt(key[1]);
       const e_moves = pseudo_moves(cloned_board, castled_clone, value as Piece, file, rank);
-      console.log(enemies);
       for (const e_move of e_moves)
         new_moves.push(e_move);
     }
