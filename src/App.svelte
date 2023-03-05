@@ -1,16 +1,18 @@
 <script lang="ts">
   import Cell from "./lib/Cell.svelte";
-  import { Color, ranks, files, Piece, FENtoBoard, Player, boardToFen } from "./util";
-  import { gen_moves } from "./chess";
+  import { Color, ranks, files, Piece, FENtoBoard, Player, boardToFen, fileToInt, getKeyByValue } from "./util";
+  import { gen_moves, pseudo_moves } from "./chess";
 
   const history = [];
+  let all_moves = "";
   const initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR KQkq w".split(' ')
 
   let board = FENtoBoard(initialPosition[0]);
-  history.push(initialPosition[0]);
+  history.push(initialPosition[0]+" "+initialPosition[1]);
   let castling = initialPosition[1].split('');
   let moving_piece = Piece.None;
   let from = "";
+  let message = "";
   let flip = false;
   let to_move: Player = initialPosition[2] == 'w' ? Player.WHITE : Player.BLACK;
 
@@ -42,14 +44,13 @@
         board['a1'] = Piece.None;
         board['d1'] = Piece.W_ROOK;
       }
-      // you lose castling rights
-      else {
-        castling = castling.filter((l)=> {
-          if (l == 'Q') return false;
-          if (l == 'K') return false;
-          return true;
-        })
-      }
+      // you lose castling rights because you moved and didn't castled
+      // or you just castled
+      castling = castling.filter((l)=> {
+        if (l == 'Q') return false;
+        if (l == 'K') return false;
+        return true;
+      })
     } else if (piece == Piece.B_KING) {
       // k
       if (from == "e8" && to == "g8") {
@@ -61,15 +62,15 @@
         board['a8'] = Piece.None;
         board['d8'] = Piece.B_ROOK;
       }
-      // you lose castling rights
-      else {
-        castling = castling.filter((l)=> {
-          if (l == 'q') return false;
-          if (l == 'k') return false;
-          return true;
-        })
-      }
+      // you lose castling rights because you moved and didn't castled
+      // or you just castled
+      castling = castling.filter((l)=> {
+        if (l == 'q') return false;
+        if (l == 'k') return false;
+        return true;
+      })
     }
+    all_moves += " " + from+to;
   }
   function setHoveringPiece(e: MouseEvent & {
     currentTarget: EventTarget & HTMLDivElement;
@@ -83,6 +84,35 @@
       moving_piece = p;
       from = files[file]+rank.toString();
       moves = gen_moves(board, castling, p, file, rank);
+      if (moves.length == 0) {
+        // checkmate or stalemate
+
+        const our_king = getKeyByValue(board, to_move == 'w' ? Piece.W_KING : Piece.B_KING)
+
+        // generate new moves
+        const new_moves = [];
+        const enemies = {};
+        Object.keys(board).reduce((_, key) => {
+          if (board[key][0] == (to_move == 'w' ? 'b' : 'w'))
+            enemies[key] = board[key]
+          return key;
+        })
+        for (const [key, value] of Object.entries(enemies)) {
+          const file = fileToInt(key[0]);
+          const rank = parseInt(key[1]);
+          const e_moves = pseudo_moves(board, castling, value as Piece, file, rank);
+          console.log(enemies);
+          for (const e_move of e_moves)
+            new_moves.push(e_move);
+        }
+
+        // if any of them capture our king, it's checkmate
+        if (new_moves.includes(our_king)) {
+          message = "Checkmate!"
+        } else {
+          message = "Stalemate!"
+        }
+      }
     }
     if (hoveringPiece == Piece.None) {
       if (moving_piece != Piece.None) {
@@ -103,8 +133,8 @@
 
     // update history
     const new_fen = boardToFen(board);
-    if (hoveringPiece == Piece.None && history[history.length-1] != new_fen)
-      history.push(new_fen);
+    if (hoveringPiece == Piece.None && history[history.length-1].split(' ')[0] != new_fen)
+      history.push(new_fen+" "+castling.join(''));
     console.log(history)
   }
   function moved() {
@@ -114,12 +144,14 @@
 
   function undo() {
     history.pop();
-    const new_board = history[history.length-1]
+    const [new_board, new_castling] = history[history.length-1].split(' ');
     if (new_board) {
-      board = FENtoBoard(history[history.length-1]);
+      board = FENtoBoard(new_board);
+      castling = new_castling.split('');
       moved();
     }
-    else history.push(boardToFen(board));
+    else history.push(boardToFen(board)+" "+castling.join(''));
+    message = ""
   }
 
   function do_flip() {
@@ -137,6 +169,8 @@
 </script>
 
 <main>
+<caption>{message}</caption>
+<section class="content">
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <section class="buttons">
   <div class="button" on:click={undo}>
@@ -181,6 +215,7 @@
     {/each}
   {/if}
 </section>
+</section>
 <div class="hovering" bind:this={hoveringDiv}>
   {#if hoveringPiece != Piece.None}
     <img src={`${hoveringPiece}.png`} alt={`${hoveringPiece}`} />
@@ -191,6 +226,17 @@
 <style>
 main {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+caption {
+  font-size: larger;
+}
+.content {
+  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-evenly;
   width: 100%;
@@ -237,7 +283,7 @@ main {
   display: grid;
   place-items: center;
 }
-.undo > img {
+.button > img {
   width: 25px;
   height: 25px;
 }

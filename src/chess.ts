@@ -199,11 +199,11 @@ export function makeMove(board: Object, piece: Piece, from: string, to: string) 
   // k
   else if (piece == Piece.B_KING && from == "e8" && to == "g8") {
     board['h8'] = Piece.None;
-    board['f8'] = Piece.W_ROOK;
+    board['f8'] = Piece.B_ROOK;
     // Q
   } else if (piece == Piece.B_KING && from == "e8" && to == "c8") {
     board['a8'] = Piece.None;
-    board['d8'] = Piece.W_ROOK;
+    board['d8'] = Piece.B_ROOK;
   }
 
   board[from] = Piece.None;
@@ -234,6 +234,7 @@ export function gen_moves(board: Object, castling: string[], piece: Piece, file:
       const file = fileToInt(key[0]);
       const rank = parseInt(key[1]);
       const e_moves = pseudo_moves(cloned_board, castled_clone, value as Piece, file, rank);
+      console.log(enemies);
       for (const e_move of e_moves)
         new_moves.push(e_move);
     }
