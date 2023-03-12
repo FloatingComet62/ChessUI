@@ -117,6 +117,7 @@
         // generate our moves
         const our_new_moves = [];
         const friends = {};
+        if (board["a8"][0] == to_move) friends["a8"] = board["a8"];
         Object.keys(board).reduce((_, key) => {
           if (board[key][0] == to_move) friends[key] = board[key];
           return key;
@@ -145,6 +146,8 @@
           // generate new moves
           const new_moves = [];
           const enemies = {};
+          if (board["a8"][0] == (to_move == "w" ? "b" : "w"))
+            enemies["a8"] = board["a8"];
           Object.keys(board).reduce((_, key) => {
             if (board[key][0] == (to_move == "w" ? "b" : "w"))
               enemies[key] = board[key];

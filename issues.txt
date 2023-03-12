@@ -1,2 +1,0 @@
-R6k/7P/3NN1K1/1p6/1B6/8/8/8  b
--> thinks it's stalemate when it's actually checkmate
