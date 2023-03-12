@@ -243,8 +243,6 @@ export function gen_moves(board: Object, castling: string[], piece: Piece, file:
         new_moves.push(e_move);
     }
 
-    console.log(board, enemies, piece)
-
     // if the move leads to the capture of our king, don't include it
     if (!new_moves.includes(our_king)) {
       valid_moves.push(p_move);

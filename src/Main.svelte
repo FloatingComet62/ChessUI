@@ -11,9 +11,15 @@
     fileToInt,
     getKeyByValue,
   } from "./util";
+  // import { invoke } from "@tauri-apps/api/tauri";
   import { gen_moves } from "./chess";
 
-  export let initialPos;
+  export let initialPos: string;
+  export let darkColor: string;
+  export let lightColor: string;
+  export let highlightColor: string;
+  export let moveColor: string;
+  export let ballColor: string;
 
   const history = [];
   let all_moves = "";
@@ -27,6 +33,7 @@
   let message = "";
   let flip = false;
   let to_move: Player = initialPosition[2] == "w" ? Player.WHITE : Player.BLACK;
+  let move: Promise<unknown>;
 
   let hoveringPiece = Piece.None;
   let hoveringDiv: any;
@@ -83,6 +90,12 @@
       });
     }
     all_moves += " " + from + to;
+
+    // async function getMove() {
+    // return await invoke("evaluate", { fen: boardToFen(board) });
+    // }
+
+    // move = getMove();
   }
   function setHoveringPiece(
     e: MouseEvent & {
@@ -223,7 +236,14 @@
 </script>
 
 <main>
-  <caption>{message}</caption>
+  <!-- <caption>{message}</caption>
+  {#await move}
+    <p>...waiting</p>
+  {:then move_to_show}
+    <p>{move_to_show}</p>
+  {:catch error}
+    <p style="color: red">{error.message}</p>
+  {/await} -->
   <section class="content">
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <section class="buttons">
@@ -249,6 +269,11 @@
               piece={board[file + rank]}
               setHP={setHoveringPiece}
               getHP={getHoveringPiece}
+              {darkColor}
+              {lightColor}
+              {highlightColor}
+              {ballColor}
+              {moveColor}
               {updateBoard}
               {moved}
             />
@@ -265,6 +290,11 @@
               piece={board[file + rank]}
               setHP={setHoveringPiece}
               getHP={getHoveringPiece}
+              {darkColor}
+              {lightColor}
+              {highlightColor}
+              {moveColor}
+              {ballColor}
               {updateBoard}
               {moved}
             />
@@ -288,9 +318,9 @@
     gap: 1rem;
     width: 100%;
   }
-  caption {
+  /* caption {
     font-size: larger;
-  }
+  } */
   .content {
     display: flex;
     flex-direction: row;

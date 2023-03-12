@@ -78,7 +78,7 @@ export function FENtoBoard(fen: string): Object {
   for (const c of fen.split('')) {
     const skip = parseInt(c);
     if (skip) {
-      fileIndex = fileToInt(file) + skip
+      fileIndex += skip
       file = files[fileIndex];
       continue;
     }
