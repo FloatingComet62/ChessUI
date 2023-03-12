@@ -236,8 +236,8 @@
 </script>
 
 <main>
-  <!-- <caption>{message}</caption>
-  {#await move}
+  <caption>{message}</caption>
+  <!-- {#await move}
     <p>...waiting</p>
   {:then move_to_show}
     <p>{move_to_show}</p>
@@ -318,9 +318,9 @@
     gap: 1rem;
     width: 100%;
   }
-  /* caption {
+  caption {
     font-size: larger;
-  } */
+  }
   .content {
     display: flex;
     flex-direction: row;

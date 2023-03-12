@@ -40,7 +40,7 @@
   class="cell"
   style={`background-color: ${
     color == Color.DARK ? darkColor : lightColor
-  }; color: ${color == Color.DARK ? lightColor : lightColor}; ${
+  }; color: ${color == Color.DARK ? lightColor : darkColor}; ${
     highlighted ? `background-color: ${highlightColor}` : ""
   }; ${choosen ? `background-color: ${moveColor}` : `""`};`}
   unselectable="on"
