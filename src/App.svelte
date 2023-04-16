@@ -2,11 +2,19 @@
   import Main from "./Main.svelte";
   import { BaseDirectory, writeFile, readTextFile } from "@tauri-apps/api/fs";
 
-  let darkColor = "#b58863";
-  let lightColor = "#f0d9b5";
-  let highlightColor = "#e06853";
-  let moveColor = "#f7ec59";
-  let ballColor = "#303030";
+  let colors = {
+    darkColor: "#b58863",
+    lightColor: "#f0d9b5",
+    highlightColor: "#e06853",
+    moveColor: "#f7ec59",
+    ballColor: "#303030",
+  };
+
+  function sum(thing) {
+    let sum = "";
+    for (const item in thing) sum += thing[item];
+    return sum;
+  }
 
   async function loadData() {
     try {
@@ -14,16 +22,15 @@
         dir: BaseDirectory.AppData,
       });
       const data = response.split("#");
-      darkColor = "#" + data[1];
-      lightColor = "#" + data[2];
-      highlightColor = "#" + data[3];
-      moveColor = "#" + data[4];
-      ballColor = "#" + data[5];
+      let i = 1;
+      for (const color in colors) {
+        colors[color] = `#${data[i]}`;
+        i++;
+      }
     } catch {
       writeFile(
         {
-          contents:
-            darkColor + lightColor + highlightColor + moveColor + ballColor,
+          contents: sum(colors),
           path: "theme.txt",
         },
         { dir: BaseDirectory.AppData }
@@ -44,8 +51,7 @@
     start = true;
     writeFile(
       {
-        contents:
-          darkColor + lightColor + highlightColor + moveColor + ballColor,
+        contents: sum(colors),
         path: "theme.txt",
       },
       { dir: BaseDirectory.AppData }
@@ -54,50 +60,21 @@
 </script>
 
 {#if start}
-  <Main
-    initialPos={initialPosition}
-    {darkColor}
-    {lightColor}
-    {highlightColor}
-    {moveColor}
-    {ballColor}
-  />
+  <Main initialPos={initialPosition} {...colors} />
 {:else}
   <main class="init">
     <input class="start" spellcheck="false" bind:value={initialPosition} />
     <button class="go" on:click={go}>Go</button>
     <section>
       Color Pallete
-      <input
-        class="colorpicker"
-        style={`background-color: ${darkColor}`}
-        spellcheck="false"
-        bind:value={darkColor}
-      />
-      <input
-        class="colorpicker"
-        style={`background-color: ${lightColor}`}
-        spellcheck="false"
-        bind:value={lightColor}
-      />
-      <input
-        class="colorpicker"
-        style={`background-color: ${highlightColor}`}
-        spellcheck="false"
-        bind:value={highlightColor}
-      />
-      <input
-        class="colorpicker"
-        style={`background-color: ${moveColor}`}
-        spellcheck="false"
-        bind:value={moveColor}
-      />
-      <input
-        class="colorpicker"
-        style={`background-color: ${ballColor}`}
-        spellcheck="false"
-        bind:value={ballColor}
-      />
+      {#each Object.keys(colors) as color}
+        <input
+          class="colorpicker"
+          style={`background-color: ${colors[color]}`}
+          spellcheck="false"
+          bind:value={colors[color]}
+        />
+      {/each}
     </section>
   </main>
 {/if}

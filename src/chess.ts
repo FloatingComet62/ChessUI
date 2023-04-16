@@ -1,4 +1,4 @@
-import { Piece, files, fileToInt, getKeyByValue } from "./util";
+import { Piece, files, fileToInt, getKeyByValue, Player } from "./util";
 
 export function king(piece: Piece, castling: string[], board: Object, file: number, rank: number): string[] {
   const valid_moves: string[] = [];
@@ -166,6 +166,34 @@ export function knight(piece: Piece, board: Object, file: number, rank: number):
   return valid_moves;
 }
 
+export function getTeam(board: Object, to_move: Player, getEnemy: boolean): Object {
+  const team = {};
+  const enemy = to_move == "w" ? "b" : "w";
+
+  // due to the "previousValue" & "currentValue", this function below doesn't check
+  // position a8, so i forcefully check it right above
+  if (board["a8"][0] == getEnemy ? enemy : to_move)
+    team["a8"] = board["a8"];
+  Object.keys(board).reduce((_, key) => {
+    if (board[key][0] == getEnemy ? enemy : to_move)
+      team[key] = board[key];
+    return key;
+  });
+  return team;
+}
+
+export function generatePseudoResponses(board: Object, castling: string[], team: Object): any[] {
+  const new_moves = [];
+  for (const [key, value] of Object.entries(team)) {
+    const file = fileToInt(key[0]);
+    const rank = parseInt(key[1]);
+    const e_moves = pseudo_moves(board, castling, value as Piece, file, rank);
+    for (const e_move of e_moves)
+      new_moves.push(e_move);
+  }
+  return new_moves;
+}
+
 export function pseudo_moves(board: Object, castling: string[], piece: Piece, file: number, rank: number): string[] {
   if (piece == Piece.B_KING || piece == Piece.W_KING)
     return king(piece, castling, board, file, rank);
@@ -223,25 +251,8 @@ export function gen_moves(board: Object, castling: string[], piece: Piece, file:
     const our_king = getKeyByValue(cloned_board, piece[0] == 'w' ? Piece.W_KING : Piece.B_KING)
 
     // generate new moves
-    const new_moves = [];
-    const enemies = {};
-
-    if (cloned_board['a8'][0] == (piece[0] == 'w' ? 'b' : 'w'))
-      enemies['a8'] = cloned_board['a8']
-    // due to the "previousValue" & "currentValue", this function below doesn't check
-    // position a8, so i forcefully check it right above
-    Object.keys(cloned_board).reduce((_, key) => {
-      if (cloned_board[key][0] == (piece[0] == 'w' ? 'b' : 'w'))
-        enemies[key] = cloned_board[key]
-      return key;
-    })
-    for (const [key, value] of Object.entries(enemies)) {
-      const file = fileToInt(key[0]);
-      const rank = parseInt(key[1]);
-      const e_moves = pseudo_moves(cloned_board, castled_clone, value as Piece, file, rank);
-      for (const e_move of e_moves)
-        new_moves.push(e_move);
-    }
+    const enemies = getTeam(cloned_board, piece[0] as Player, true);
+    const new_moves = generatePseudoResponses(cloned_board, castled_clone, enemies);
 
     // if the move leads to the capture of our king, don't include it
     if (!new_moves.includes(our_king)) {

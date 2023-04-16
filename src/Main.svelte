@@ -8,11 +8,9 @@
     FENtoBoard,
     Player,
     boardToFen,
-    fileToInt,
     getKeyByValue,
   } from "./util";
-  // import { invoke } from "@tauri-apps/api/tauri";
-  import { gen_moves } from "./chess";
+  import { gen_moves, getTeam, generatePseudoResponses } from "./chess";
 
   export let initialPos: string;
   export let darkColor: string;
@@ -22,18 +20,20 @@
   export let ballColor: string;
 
   const history = [];
-  let all_moves = "";
   const initialPosition = initialPos.split(" ");
 
   let board = FENtoBoard(initialPosition[0]);
   history.push(initialPosition[0] + " " + initialPosition[1]);
   let castling = initialPosition[1].split("");
+  let castling_data = [
+    [Piece.W_KING, Piece.W_ROOK, "1", "K", "Q"],
+    [Piece.B_KING, Piece.B_ROOK, "8", "k", "q"],
+  ];
   let moving_piece = Piece.None;
   let from = "";
   let message = "";
   let flip = false;
   let to_move: Player = initialPosition[2] == "w" ? Player.WHITE : Player.BLACK;
-  let move: Promise<unknown>;
 
   let hoveringPiece = Piece.None;
   let hoveringDiv: any;
@@ -52,50 +52,28 @@
     } else if (piece == Piece.B_ROOK) {
       if (from == "a8") castling = castling.filter((l) => l !== "q");
       if (from == "h8") castling = castling.filter((l) => l !== "k");
-    } else if (piece == Piece.W_KING) {
-      // K
-      if (from == "e1" && to == "g1") {
-        board["h1"] = Piece.None;
-        board["f1"] = Piece.W_ROOK;
+    } else {
+      for (const [
+        moved_piece,
+        friend_rook,
+        back_rank,
+        KingSide_Notation,
+        QueenSide_Notation,
+      ] of castling_data) {
+        if (piece == moved_piece) {
+          if (from == "e" + back_rank && to == "g" + back_rank) {
+            board["h" + back_rank] = Piece.None;
+            board["f" + back_rank] = friend_rook;
+          } else if (from == "e" + back_rank && to == "c" + back_rank) {
+            board["a" + back_rank] = Piece.None;
+            board["d" + back_rank] = friend_rook;
+          }
+        }
+        castling = castling.filter(
+          (l) => l != QueenSide_Notation || l != KingSide_Notation
+        );
       }
-      // Q
-      else if (from == "e1" && to == "c1") {
-        board["a1"] = Piece.None;
-        board["d1"] = Piece.W_ROOK;
-      }
-      // you lose castling rights because you moved and didn't castled
-      // or you just castled
-      castling = castling.filter((l) => {
-        if (l == "Q") return false;
-        if (l == "K") return false;
-        return true;
-      });
-    } else if (piece == Piece.B_KING) {
-      // k
-      if (from == "e8" && to == "g8") {
-        board["h8"] = Piece.None;
-        board["f8"] = Piece.B_ROOK;
-      }
-      // q
-      else if (from == "e8" && to == "c8") {
-        board["a8"] = Piece.None;
-        board["d8"] = Piece.B_ROOK;
-      }
-      // you lose castling rights because you moved and didn't castled
-      // or you just castled
-      castling = castling.filter((l) => {
-        if (l == "q") return false;
-        if (l == "k") return false;
-        return true;
-      });
     }
-    all_moves += " " + from + to;
-
-    // async function getMove() {
-    // return await invoke("evaluate", { fen: boardToFen(board) });
-    // }
-
-    // move = getMove();
   }
   function setHoveringPiece(
     e: MouseEvent & {
@@ -115,63 +93,42 @@
       moves = gen_moves(board, castling, p, file, rank);
       if (moves.length == 0) {
         // generate our moves
-        const our_new_moves = [];
-        const friends = {};
-        if (board["a8"][0] == to_move) friends["a8"] = board["a8"];
-        Object.keys(board).reduce((_, key) => {
-          if (board[key][0] == to_move) friends[key] = board[key];
-          return key;
-        });
-        for (const [key, value] of Object.entries(friends)) {
-          const file = fileToInt(key[0]);
-          const rank = parseInt(key[1]);
-          const e_moves = gen_moves(
-            board,
-            castling,
-            value as Piece,
-            file,
-            rank
-          );
-          for (const e_move of e_moves) our_new_moves.push(e_move);
-        }
+        const friends = getTeam(board, to_move, false);
+        const our_response = generatePseudoResponses(board, castling, friends);
 
-        if (our_new_moves.length == 0) {
+        if (our_response.length == 0) {
           // checkmate or stalemate
-
           const our_king = getKeyByValue(
             board,
             to_move == "w" ? Piece.W_KING : Piece.B_KING
           );
 
           // generate new moves
-          const new_moves = [];
-          const enemies = {};
-          if (board["a8"][0] == (to_move == "w" ? "b" : "w"))
-            enemies["a8"] = board["a8"];
-          Object.keys(board).reduce((_, key) => {
-            if (board[key][0] == (to_move == "w" ? "b" : "w"))
-              enemies[key] = board[key];
-            return key;
-          });
-          for (const [key, value] of Object.entries(enemies)) {
-            const file = fileToInt(key[0]);
-            const rank = parseInt(key[1]);
-            const e_moves = gen_moves(
-              board,
-              castling,
-              value as Piece,
-              file,
-              rank
-            );
-            for (const e_move of e_moves) new_moves.push(e_move);
-          }
+          const enemies = getTeam(board, to_move, true);
+          const responses = generatePseudoResponses(board, castling, enemies);
 
           // if any of them capture our king, it's checkmate
-          if (new_moves.includes(our_king)) {
+          if (responses.includes(our_king)) {
             message = "Checkmate!";
           } else {
             message = "Stalemate!";
           }
+        }
+      }
+
+      // don't castle if in check
+      if (p[1] == "k") {
+        const enemies = getTeam(board, to_move, true);
+        const responses = generatePseudoResponses(enemies, castling, enemies);
+        const castling_rank = p[0] == "w" ? "1" : "8";
+        const king_pos = getKeyByValue(
+          board,
+          to_move == "w" ? Piece.W_KING : Piece.B_KING
+        );
+        if (responses.includes(king_pos)) {
+          moves = moves.filter(
+            (move) => move != "g" + castling_rank && move != "c" + castling_rank
+          );
         }
       }
     }

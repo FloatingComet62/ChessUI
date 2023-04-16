@@ -49,14 +49,16 @@
     if (!choosen && !moveable && getHP() != Piece.None) return;
     if (moveable) moved();
 
+    let hp = getHP();
+
     if (piece == Piece.None) {
       // placing a piece on blank
-      piece = getHP();
+      piece = hp;
       setHP(e, Piece.None, fileToInt(file), parseInt(rank));
     } else {
-      if (getHP() != Piece.None) {
+      if (hp != Piece.None) {
         // capture
-        piece = getHP();
+        piece = hp;
         setHP(e, Piece.None, fileToInt(file), parseInt(rank));
       } else {
         setHP(e, piece, fileToInt(file), parseInt(rank));
