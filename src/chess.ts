@@ -193,6 +193,17 @@ export function generatePseudoResponses(board: Object, castling: string[], team:
   }
   return new_moves;
 }
+export function generateValidResponses(board: Object, castling: string[], team: Object): any[] {
+  const new_moves = [];
+  for (const [key, value] of Object.entries(team)) {
+    const file = fileToInt(key[0]);
+    const rank = parseInt(key[1]);
+    const e_moves = gen_moves(board, castling, value as Piece, file, rank);
+    for (const e_move of e_moves)
+      new_moves.push(e_move);
+  }
+  return new_moves;
+}
 
 export function pseudo_moves(board: Object, castling: string[], piece: Piece, file: number, rank: number): string[] {
   if (piece == Piece.B_KING || piece == Piece.W_KING)

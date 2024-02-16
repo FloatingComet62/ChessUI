@@ -10,7 +10,12 @@
     boardToFen,
     getKeyByValue,
   } from "./util";
-  import { gen_moves, getTeam, generatePseudoResponses } from "./chess";
+  import {
+    gen_moves,
+    getTeam,
+    generatePseudoResponses,
+    generateValidResponses,
+  } from "./chess";
 
   export let initialPos: string;
   export let darkColor: string;
@@ -23,8 +28,8 @@
   const initialPosition = initialPos.split(" ");
 
   let board = FENtoBoard(initialPosition[0]);
-  history.push(initialPosition[0] + " " + initialPosition[1]);
-  let castling = initialPosition[1].split("");
+  history.push(initialPosition[0] + " " + (initialPosition[1] || ""));
+  let castling = (initialPosition[1] || "").split("");
   let castling_data = [
     [Piece.W_KING, Piece.W_ROOK, "1", "K", "Q"],
     [Piece.B_KING, Piece.B_ROOK, "8", "k", "q"],
@@ -33,7 +38,14 @@
   let from = "";
   let message = "";
   let flip = false;
-  let to_move: Player = initialPosition[2] == "w" ? Player.WHITE : Player.BLACK;
+  let to_move: Player;
+  if (initialPosition.length == 2) {
+    to_move = initialPosition[1] == "w" ? Player.WHITE : Player.BLACK;
+  } else if (initialPosition.length == 1) {
+    to_move = Player.WHITE;
+  } else {
+    to_move = initialPosition[2] == "w" ? Player.WHITE : Player.BLACK;
+  }
 
   let hoveringPiece = Piece.None;
   let hoveringDiv: any;
@@ -93,8 +105,9 @@
       moves = gen_moves(board, castling, p, file, rank);
       if (moves.length == 0) {
         // generate our moves
-        const friends = getTeam(board, to_move, false);
-        const our_response = generatePseudoResponses(board, castling, friends);
+        const friends = getTeam(board, to_move, true);
+        const our_response = generateValidResponses(board, castling, friends);
+        console.log(our_response, friends);
 
         if (our_response.length == 0) {
           // checkmate or stalemate
@@ -105,7 +118,7 @@
 
           // generate new moves
           const enemies = getTeam(board, to_move, true);
-          const responses = generatePseudoResponses(board, castling, enemies);
+          const responses = generateValidResponses(board, castling, enemies);
 
           // if any of them capture our king, it's checkmate
           if (responses.includes(our_king)) {

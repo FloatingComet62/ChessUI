@@ -1,6 +1,7 @@
 <script>
   import Main from "./Main.svelte";
   import { BaseDirectory, writeFile, readTextFile } from "@tauri-apps/api/fs";
+  import TitleBar from "./lib/TitleBar.svelte";
 
   let colors = {
     darkColor: "#b58863",
@@ -59,6 +60,7 @@
   }
 </script>
 
+<TitleBar />
 {#if start}
   <Main initialPos={initialPosition} {...colors} />
 {:else}
